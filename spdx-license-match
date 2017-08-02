@@ -114,13 +114,13 @@ join_paragraphs() {
 		END              { if(para!="") print para }
 		/^\s+?$/         { print para; para=""; print; next }
 		/^@@.*@@$/       { print para; para=""; print; next }
-		/^\\ No newline/ { print para; para=""; print; next }
 		                 { if(para=="") para=$0; else para=para " " $0 }
 	'
 }
 
 word_diff_output() {
 	diff -wu $1 $2 \
+	| grep -v '^\\ No newline at end of file' \
 	| wdiff -d
 }
 
