@@ -11,6 +11,8 @@ opt_input=
 opt_guess=
 # number of output matches
 opt_num=1
+# short mode
+opt_short=
 # color for added lines (green)
 diffnew=`tput setaf 2`
 # color for removed lines (red)
@@ -32,6 +34,7 @@ usage() {
 	echo "                   e.g. --guess bsd"
 	echo "  -m, --nocolor    don't colorize diff output"
 	echo "  -n, --num N      output up to N license matches [default: 1]"
+	echo "  -s, --short      don't print a diff output, only the match lines"
 }
 
 parse_opts() {
@@ -70,6 +73,10 @@ parse_opts() {
 						exit 1
 						;;
 				esac
+				;;
+			-s|--short)
+				shift
+				opt_short=yes
 				;;
 			--)
 				shift
@@ -125,6 +132,10 @@ report_matches() {
 
 		if [ "$match" -lt 50 ]; then
 			echo "Note: match for $license is pretty bad. Maybe try a better --guess."
+		fi
+
+		if [ -n "$opt_short" ]; then
+			continue;
 		fi
 
 		# wrap to 80 columns for better readability
