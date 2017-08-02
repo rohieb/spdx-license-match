@@ -121,11 +121,7 @@ join_paragraphs() {
 
 word_diff_output() {
 	diff -wu $1 $2 \
-	| wdiff -d \
-		--start-delete "${diffold}[-" \
-		--end-delete "-]${reset}" \
-		--start-insert "${diffnew}{+" \
-		--end-insert "+}${reset}"
+	| wdiff -d
 }
 
 calc_match() {
@@ -152,13 +148,25 @@ report_matches() {
 		fold -w 78 -s < $LICENSE_DIR/$license.txt > "$tmpdir/$license.txt"
 
 		echo Diff:
-		# remove diff header, add fake one, and rewrap for better readability
+		# remove diff header, add fake one, and rewrap for better readability.
+		# add syntax highlighting only after folding, or else fold will count ANSI
+		# escapes as part of the words and the paragraphs looks jagged when the
+		# escapes are swallowed by the tty.
 		echo "  $diffold--- $license.txt$reset"
 		echo "  $diffnew+++ input$reset"
 		word_diff_output $tmpdir/$license.txt "$1" \
-		| tail -n +2 | join_paragraphs | fold -s | awk '
+		| tail -n +2 \
+		| join_paragraphs \
+		| fold -s \
+		| awk '
 			/^@@(.*)@@$/ { print "  '$diffhunk'" $0 "'$reset'"; next }
-			             { print "  " $0 }
+			             {
+			               gsub("\\{\\+", "'$diffnew'{+");
+			               gsub("\\[-",   "'$diffold'[-");
+			               gsub("\\+\\}", "+}'$reset'");
+			               gsub("-\\]",   "-]'$reset'");
+			               print "  " $0
+			             }
 			'
 	done
 }
