@@ -67,6 +67,10 @@ parse_opts() {
 		echo "$SELF: need a file to match"
 		exit 1
 	fi
+	if [ ! -r "$opt_input" ]; then
+		echo "$SELF: unable to read from input"
+		exit 1
+	fi
 }
 
 join_paragraphs() {
