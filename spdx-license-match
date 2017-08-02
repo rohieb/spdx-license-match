@@ -3,7 +3,6 @@ SELF=`basename $0`
 BINDIR=`readlink -m $0`
 BINDIR=`dirname $BINDIR`
 LICENSE_DIR=$BINDIR/license-list
-MATCHES=
 
 # input file to match against the license database
 opt_input=
@@ -13,6 +12,7 @@ opt_guess=
 opt_num=1
 # short mode
 opt_short=
+
 # color for added lines (green)
 diffnew=`tput setaf 2`
 # color for removed lines (red)
