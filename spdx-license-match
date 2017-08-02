@@ -26,9 +26,10 @@ tmpdir=`mktemp -d --tmpdir spdx.XXXXX`
 trap "rm -rf $tmpdir" EXIT
 
 usage() {
-	echo "Usage: $SELF [options] inputfile"
+	echo "Usage: $SELF [options] [--] [input]"
 	echo
-	echo "  inputfile        file to match against the SPDX license database"
+	echo "  input            file to match against the SPDX license database,"
+	echo "                   empty or - to read from stdin"
 	echo "  -h, --help       show this help text"
 	echo "  -g, --guess      try only licenses containing this guess in title,"
 	echo "                   e.g. --guess bsd"
@@ -38,7 +39,7 @@ usage() {
 }
 
 parse_opts() {
-	while [ -n "$2" ]; do
+	while [ -n "$1" ]; do
 		case "$1" in
 			-h|--help)
 				shift
@@ -83,20 +84,26 @@ parse_opts() {
 				break
 				;;
 			*)
-				echo "Unknown parameter: $1"
-				exit 1
+				opt_input="$1"
+				shift
+				case "$opt_input" in
+					-)
+						;;
+					-*)
+						echo "Unknown parameter: $1"
+						exit 1
+						;;
+					*)
+						;;
+					esac
 				;;
 		esac
 	done
 
-	opt_input="$1"
-
 	if [ -z "$opt_input" ]; then
-		echo "$SELF: need a file to match"
-		exit 1
-	fi
-	if [ ! -r "$opt_input" ]; then
-		echo "$SELF: unable to read from input"
+		opt_input="-"
+	elif [ ! "$opt_input" = "-" -a ! -r "$opt_input" ]; then
+		echo "$SELF: unable to read from input file"
 		exit 1
 	fi
 }
@@ -157,7 +164,11 @@ main() {
 	parse_opts "$@"
 
 	# preprocessing: rewrap to 80 columns for better readability
-	join_paragraphs < $opt_input | fold -w 78 -s > "$tmpdir/input"
+	if [ "$opt_input" = "-" ]; then
+		join_paragraphs | fold -w 78 -s > "$tmpdir/input"
+	else
+		join_paragraphs < $opt_input | fold -w 78 -s > "$tmpdir/input"
+	fi
 
 	# matching
 	if [ -n "$opt_guess" ]; then
