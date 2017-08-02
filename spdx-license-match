@@ -82,7 +82,7 @@ join_paragraphs() {
 }
 
 word_diff_output() {
-	diff -u $1 $2 \
+	diff -wu $1 $2 \
 	| wdiff -d \
 		--start-delete "${diffold}[-" \
 		--end-delete "-]${reset}" \
@@ -97,7 +97,13 @@ calc_match() {
 }
 
 report_matches() {
-	sort -n -r | head
+	sort -n -r | head \
+	| while read match license; do
+		echo Match: $match $license
+		echo Diff:
+		word_diff_output $LICENSE_DIR/$license.txt "$1" \
+		| awk '{ print "  " $0 }'
+	done
 }
 
 main() {
@@ -115,7 +121,7 @@ main() {
 	find $LICENSE_DIR -maxdepth 1 -type f -iname *.txt ! -iname Updating*.txt $find_guess \
 	| while read license; do
 		calc_match "$license" "$tmpinputfile"
-	done | report_matches
+	done | report_matches "$tmpinputfile"
 }
 
 main "$@"
