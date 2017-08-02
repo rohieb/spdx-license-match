@@ -113,14 +113,19 @@ word_diff_output() {
 
 calc_match() {
 	license_file=`basename $1 .txt`
-	common_lines=`wdiff --statistics $2 $1 | tail -n1 | awk '{ print $5 }'`
+	# removing the %s makes integering easier. we re-add them later.
+	common_lines=`wdiff --statistics $2 $1 | tail -n1 | awk '{ gsub("%", ""); print $5 }'`
 	echo $common_lines $license_file
 }
 
 report_matches() {
 	sort -n -r | head -n $opt_num \
 	| while read match license; do
-		echo Match: $match $license
+		echo Match: $match% $license
+
+		if [ "$match" -lt 50 ]; then
+			echo "Note: match for $license is pretty bad. Maybe try a better --guess."
+		fi
 
 		# wrap to 80 columns for better readability
 		fold -w 78 -s < $LICENSE_DIR/$license.txt > "$tmpdir/$license.txt"
