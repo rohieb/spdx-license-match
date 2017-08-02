@@ -108,11 +108,14 @@ parse_opts() {
 	fi
 }
 
+# join paragraphs, but leave diff lines in peace
 join_paragraphs() {
 	awk '
-		END         { print para }
-		/^\s+?$/    { print para "\n"; para="" }
-		!/^\s+?$/   { if(para=="") para=$0; else para=para " " $0 }
+		END              { if(para!="") print para }
+		/^\s+?$/         { print para; para=""; print; next }
+		/^@@.*@@$/       { print para; para=""; print; next }
+		/^\\ No newline/ { print para; para=""; print; next }
+		                 { if(para=="") para=$0; else para=para " " $0 }
 	'
 }
 
@@ -145,15 +148,15 @@ report_matches() {
 			continue;
 		fi
 
-		# wrap to 80 columns for better readability
+		# wrap to 80 columns for shorter diff
 		fold -w 78 -s < $LICENSE_DIR/$license.txt > "$tmpdir/$license.txt"
 
 		echo Diff:
-		# remove diff header and add fake one for better readability
-		echo "  $diffold--- $tmpdir/$license.txt$reset"
-		echo "  $diffnew+++ $tmpdir/input$reset"
+		# remove diff header, add fake one, and rewrap for better readability
+		echo "  $diffold--- $license.txt$reset"
+		echo "  $diffnew+++ input$reset"
 		word_diff_output $tmpdir/$license.txt "$1" \
-		| tail -n +2 | awk '
+		| tail -n +2 | join_paragraphs | fold -s | awk '
 			/^@@(.*)@@$/ { print "  '$diffhunk'" $0 "'$reset'"; next }
 			             { print "  " $0 }
 			'
