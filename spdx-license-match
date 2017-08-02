@@ -16,6 +16,8 @@ diffold=`tput setaf 1`
 # reset - original pair, unset all attributes
 reset=`tput sgr0`
 
+tmpdir=`mktemp -d --tmpdir spdx-input.XXXXXX`
+trap "rm -rf $tmpdir" EXIT
 
 usage() {
 	echo "Usage: $SELF [options] inputfile"
@@ -109,10 +111,8 @@ report_matches() {
 main() {
 	parse_opts "$@"
 
-	# preformatting
-	tmpinputfile=`mktemp --tmpdir spdx-input.XXXXXX`
-	trap "rm -f $tmpinputfile" EXIT
-	join_paragraphs < $opt_input > $tmpinputfile
+	# preprocessing
+	join_paragraphs < $opt_input > "$tmpdir/input"
 
 	# matching
 	if [ -n "$opt_guess" ]; then
@@ -120,8 +120,8 @@ main() {
 	fi
 	find $LICENSE_DIR -maxdepth 1 -type f -iname *.txt ! -iname Updating*.txt $find_guess \
 	| while read license; do
-		calc_match "$license" "$tmpinputfile"
-	done | report_matches "$tmpinputfile"
+		calc_match "$license" "$tmpdir/input"
+	done | report_matches "$tmpdir/input"
 }
 
 main "$@"
