@@ -1,0 +1,119 @@
+#!/bin/sh
+SELF=`basename $0`
+BINDIR=`dirname $0`
+BINDIR=`readlink -m $BINDIR`
+LICENSE_DIR=$BINDIR/license-list
+MATCHES=
+
+# input file to match against the license database
+opt_input=
+# user guess for license
+opt_guess=
+# color for added lines (green)
+diffnew=`tput setaf 2`
+# color for removed lines (red)
+diffold=`tput setaf 1`
+# reset - original pair, unset all attributes
+reset=`tput sgr0`
+
+
+usage() {
+	echo "Usage: $SELF [options] inputfile"
+	echo
+	echo "  inputfile        file to match against the SPDX license database"
+	echo "  -h, --help       show this help text"
+	echo "  -g, --guess      try only licenses containing this guess in title,"
+	echo "                   e.g. --guess bsd"
+	echo "  -m, --nocolor    don't colorize diff output"
+}
+
+parse_opts() {
+	while [ -n "$2" ]; do
+		case "$1" in
+			-h|--help)
+				shift
+				usage
+				exit
+				;;
+			-g|--guess)
+				shift
+				opt_guess="$1"
+				shift
+				if [ -z "$opt_guess" ]; then
+					echo "$SELF: --guess needs an additional argument"
+					exit 1
+				fi
+				;;
+			-m|--nocolor)
+				shift
+				diffold=
+				diffnew=
+				reset=
+				;;
+			--)
+				shift
+				break
+				;;
+			*)
+				echo "Unknown parameter: $1"
+				exit 1
+				;;
+		esac
+	done
+
+	opt_input="$1"
+
+	if [ -z "$opt_input" ]; then
+		echo "$SELF: need a file to match"
+		exit 1
+	fi
+}
+
+join_paragraphs() {
+	awk '
+		END         { print para }
+		/^\s+?$/    { print para "\n"; para="" }
+		!/^\s+?$/   { if(para=="") para=$0; else para=para " " $0 }
+	'
+}
+
+word_diff_output() {
+	diff -u $1 $2 \
+	| wdiff -d \
+		--start-delete "${diffold}[-" \
+		--end-delete "-]${reset}" \
+		--start-insert "${diffnew}{+" \
+		--end-insert "+}${reset}"
+}
+
+calc_match() {
+	license_file=`basename $1 .txt`
+	common_lines=`wdiff --statistics $2 $1 | tail -n1 | awk '{ print $5 }'`
+	echo $common_lines $license_file
+}
+
+report_matches() {
+	sort -n -r | head
+}
+
+main() {
+	parse_opts "$@"
+
+	# preformatting
+	tmpinputfile=`mktemp --tmpdir spdx-input.XXXXXX`
+	trap "rm -f $tmpinputfile" EXIT
+	join_paragraphs < $opt_input > $tmpinputfile
+
+	# matching
+	if [ -n "$opt_guess" ]; then
+		find_guess="-iname *$opt_guess*.txt"
+	fi
+	find $LICENSE_DIR -maxdepth 1 -type f -iname *.txt ! -iname Updating*.txt $find_guess \
+	| while read license; do
+		calc_match "$license" "$tmpinputfile"
+	done | report_matches
+}
+
+main "$@"
+
+# vim: ft=sh noet ts=2 sw=2
