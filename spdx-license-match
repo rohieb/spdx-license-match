@@ -13,10 +13,12 @@ opt_guess=
 diffnew=`tput setaf 2`
 # color for removed lines (red)
 diffold=`tput setaf 1`
+# color for hunk lines
+diffhunk=`tput setaf 6`
 # reset - original pair, unset all attributes
 reset=`tput sgr0`
 
-tmpdir=`mktemp -d --tmpdir spdx-input.XXXXXX`
+tmpdir=`mktemp -d --tmpdir spdx.XXXXX`
 trap "rm -rf $tmpdir" EXIT
 
 usage() {
@@ -50,6 +52,7 @@ parse_opts() {
 				shift
 				diffold=
 				diffnew=
+				diffhunk=
 				reset=
 				;;
 			--)
@@ -102,17 +105,27 @@ report_matches() {
 	sort -n -r | head \
 	| while read match license; do
 		echo Match: $match $license
+
+		# wrap to 80 columns for better readability
+		fold -w 78 -s < $LICENSE_DIR/$license.txt > "$tmpdir/$license.txt"
+
 		echo Diff:
-		word_diff_output $LICENSE_DIR/$license.txt "$1" \
-		| awk '{ print "  " $0 }'
+		# remove diff header and add fake one for better readability
+		echo "  $diffold--- $tmpdir/$license.txt$reset"
+		echo "  $diffnew+++ $tmpdir/input$reset"
+		word_diff_output $tmpdir/$license.txt "$1" \
+		| tail -n +2 | awk '
+			/^@@(.*)@@$/ { print "  '$diffhunk'" $0 "'$reset'"; next }
+			             { print "  " $0 }
+			'
 	done
 }
 
 main() {
 	parse_opts "$@"
 
-	# preprocessing
-	join_paragraphs < $opt_input > "$tmpdir/input"
+	# preprocessing: rewrap to 80 columns for better readability
+	join_paragraphs < $opt_input | fold -w 78 -s > "$tmpdir/input"
 
 	# matching
 	if [ -n "$opt_guess" ]; then
