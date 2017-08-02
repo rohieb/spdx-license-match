@@ -132,7 +132,7 @@ calc_match() {
 }
 
 report_matches() {
-	sort -n -r | head -n $opt_num \
+	sort -n | tail -n $opt_num \
 	| while read match license; do
 		echo Match: $match% $license
 
