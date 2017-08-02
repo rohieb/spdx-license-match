@@ -9,6 +9,8 @@ MATCHES=
 opt_input=
 # user guess for license
 opt_guess=
+# number of output matches
+opt_num=1
 # color for added lines (green)
 diffnew=`tput setaf 2`
 # color for removed lines (red)
@@ -29,6 +31,7 @@ usage() {
 	echo "  -g, --guess      try only licenses containing this guess in title,"
 	echo "                   e.g. --guess bsd"
 	echo "  -m, --nocolor    don't colorize diff output"
+	echo "  -n, --num N      output up to N license matches [default: 1]"
 }
 
 parse_opts() {
@@ -54,6 +57,19 @@ parse_opts() {
 				diffnew=
 				diffhunk=
 				reset=
+				;;
+			-n|--num)
+				shift
+				opt_num="$1"
+				shift
+				case "$opt_num" in
+					[0-9]*)
+						;;
+					*)
+						echo "$SELF: --num needs an additional numeric argument"
+						exit 1
+						;;
+				esac
 				;;
 			--)
 				shift
@@ -102,7 +118,7 @@ calc_match() {
 }
 
 report_matches() {
-	sort -n -r | head \
+	sort -n -r | head -n $opt_num \
 	| while read match license; do
 		echo Match: $match $license
 
