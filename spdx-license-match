@@ -145,6 +145,9 @@ report_matches() {
 
 		if [ -n "$opt_short" ]; then
 			continue;
+		elif [ "$match" = 100 ]; then
+			echo "Diff: files are identical"
+			continue
 		fi
 
 		# rewrap to 80 columns for shorter diff
