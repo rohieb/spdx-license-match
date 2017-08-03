@@ -12,6 +12,16 @@ you’re dealing with.
 
 [SPDX]: https://spdx.org/licenses/
 
+Installation
+------------
+
+After clong the Git repository, update the submodule:
+
+    git submodule update --init
+
+Then you can symlink the script `spdx-license-match` to any directory in your
+`$PATH` and use it as-is.
+
 Usage
 -----
 
