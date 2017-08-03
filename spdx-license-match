@@ -109,8 +109,11 @@ parse_opts() {
 }
 
 # join paragraphs, but leave diff lines in peace
+# also take care of \r vs \n line ending. adding more lines here is okay, we
+# ignore whitespace in diff anyways.
 join_paragraphs() {
-	awk '
+	tr '\r' '\n' \
+	| awk '
 		END              { if(para!="") print para }
 		/^\s+?$/         { print para; para=""; print; next }
 		/^@@.*@@$/       { print para; para=""; print; next }
@@ -144,8 +147,11 @@ report_matches() {
 			continue;
 		fi
 
-		# wrap to 80 columns for shorter diff
-		fold -w 78 -s < $LICENSE_DIR/$license.txt > "$tmpdir/$license.txt"
+		# rewrap to 80 columns for shorter diff
+		# some SPDX licenses have Mac line ending, join_paragraphs takes care of that.
+		join_paragraphs < $LICENSE_DIR/$license.txt \
+		| fold -w 78 -s \
+		> "$tmpdir/$license.txt"
 
 		echo Diff:
 		# remove diff header, add fake one, and rewrap for better readability.
@@ -176,9 +182,13 @@ main() {
 
 	# preprocessing: rewrap to 80 columns for better readability
 	if [ "$opt_input" = "-" ]; then
-		join_paragraphs | fold -w 78 -s > "$tmpdir/input"
+		join_paragraphs \
+		| fold -w 78 -s \
+		> "$tmpdir/input"
 	else
-		join_paragraphs < $opt_input | fold -w 78 -s > "$tmpdir/input"
+		join_paragraphs < $opt_input \
+		| fold -w 78 -s \
+		> "$tmpdir/input"
 	fi
 
 	# matching
