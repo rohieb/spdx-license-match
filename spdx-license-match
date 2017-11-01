@@ -81,7 +81,6 @@ parse_opts() {
 				;;
 			--)
 				shift
-				break
 				;;
 			*)
 				opt_input="$1"
