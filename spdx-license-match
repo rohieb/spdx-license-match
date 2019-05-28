@@ -151,7 +151,10 @@ report_matches() {
 
 		# rewrap to 80 columns for shorter diff
 		# some SPDX licenses have Mac line ending, join_paragraphs takes care of that.
+		# The sed takes care to reformat SPDX placeholder expressions for better
+		# wdiffability.
 		join_paragraphs < $LICENSE_DIR/$license.txt \
+		| sed 's/\(original=\)\([^; ]\+\)/\1 \2/g; s/;match=/ \0/g' \
 		| fold -w 78 -s \
 		> "$tmpdir/$license.txt"
 
