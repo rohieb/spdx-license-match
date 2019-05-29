@@ -2,7 +2,7 @@
 SELF=`basename $0`
 BINDIR=`readlink -m $0`
 BINDIR=`dirname $BINDIR`
-LICENSE_DIR=$BINDIR/license-list
+LICENSE_DIR=$BINDIR/license-list-data/template
 
 # input file to match against the license database
 opt_input=
@@ -127,7 +127,7 @@ word_diff_output() {
 }
 
 calc_match() {
-	license_file=`basename $1 .txt`
+	license_file=`basename $1 .template.txt`
 	# removing the %s makes integering easier. we re-add them later.
 	common_lines=`wdiff --statistics $2 $1 | tail -n1 | awk '{ gsub("%", ""); print $5 }'`
 	echo $common_lines $license_file
@@ -198,9 +198,9 @@ main() {
 
 	# matching
 	if [ -n "$opt_guess" ]; then
-		find_guess="-iname *$opt_guess*.txt"
+		find_guess="-iname *$opt_guess*.template.txt"
 	fi
-	find $LICENSE_DIR -maxdepth 1 -type f -iname '*.txt' ! -iname Updating*.txt $find_guess \
+	find $LICENSE_DIR -maxdepth 1 -type f -iname '*.template.txt' $find_guess \
 	| while read license; do
 		calc_match "$license" "$tmpdir/input"
 	done | report_matches "$tmpdir/input"
