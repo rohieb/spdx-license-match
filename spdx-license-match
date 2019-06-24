@@ -3,6 +3,7 @@ SELF=`basename $0`
 BINDIR=`readlink -m $0`
 BINDIR=`dirname $BINDIR`
 LICENSE_DIR=$BINDIR/license-list-data/template
+LICENSE_TEXT_DIR=$BINDIR/license-list-data/text
 
 # input file to match against the license database
 opt_input=
@@ -134,7 +135,7 @@ word_diff_output() {
 calc_match() {
 	license_file=`basename $1 .template.txt`
 	# removing the %s makes integering easier. we re-add them later.
-	common_lines=`wdiff --statistics $2 $1 | tail -n1 | awk '{ gsub("%", ""); print $5 }'`
+	common_lines=`wdiff --statistics $2 "${LICENSE_TEXT_DIR}/${license_file}.txt" | tail -n1 | awk '{ gsub("%", ""); print $5 }'`
 	echo $common_lines $license_file
 }
 
