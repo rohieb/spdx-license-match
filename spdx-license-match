@@ -120,6 +120,11 @@ join_paragraphs() {
 	'
 }
 
+remove_comment_markers() {
+	# remove C and shell style comment markers at beginning of lines
+	sed -e 's/^\/\*\*\?//; s/^[[:space:]]\+\?\*\/\?//; s/^#//'
+}
+
 word_diff_output() {
 	diff -wu $1 $2 \
 	| grep -v '^\\ No newline at end of file' \
@@ -187,7 +192,8 @@ main() {
 
 	# preprocessing: rewrap to 80 columns for better readability
 	if [ "$opt_input" = "-" ]; then
-		join_paragraphs \
+		remove_comment_markers \
+		| join_paragraphs \
 		| fold -w 78 -s \
 		> "$tmpdir/input"
 	else
