@@ -27,11 +27,19 @@ tmpdir=`mktemp -d --tmpdir spdx.XXXXX`
 trap "rm -rf $tmpdir" EXIT
 
 usage() {
-	echo "Usage: $SELF [options] [--] [input]"
+	echo "Usage:"
+  echo "  $SELF [options] [--] [input]"
+  echo "  $SELF -p <license>"
 	echo
+	echo "  -h, --help       show this help text"
+	echo
+  echo "Print mode:"
+	echo "  -p, --print <license>"
+	echo "                   print text of <license>"
+  echo
+  echo "Matching mode:"
 	echo "  input            file to match against the SPDX license database,"
 	echo "                   empty or - to read from stdin"
-	echo "  -h, --help       show this help text"
 	echo "  -g, --guess      try only licenses containing this guess in title,"
 	echo "                   e.g. --guess bsd"
 	echo "  -m, --nocolor    don't colorize diff output"
@@ -45,6 +53,16 @@ parse_opts() {
 			-h|--help)
 				shift
 				usage
+				exit
+				;;
+			-p|--print)
+				shift
+				opt_license="$1"
+				if [ -z "$opt_license" ]; then
+					echo "$SELF: --print needs an additional argument"
+					exit 1
+				fi
+				cat ${LICENSE_TEXT_DIR}/${opt_license}.txt | fold -sw 80
 				exit
 				;;
 			-g|--guess)
