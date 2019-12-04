@@ -47,6 +47,20 @@ usage() {
 	echo "  -s, --short      don't print a diff output, only the match lines"
 }
 
+have_cmd() {
+	if ! which $1 > /dev/null; then
+		echo "$1 was not found. Please install $2." >&2
+		exit 100
+	fi
+}
+
+setup() {
+	have_cmd awk awk
+	have_cmd diff diffutils
+	have_cmd tput ncurses
+	have_cmd wdiff wdiff
+}
+
 parse_opts() {
 	while [ -n "$1" ]; do
 		case "$1" in
@@ -207,6 +221,8 @@ report_matches() {
 }
 
 main() {
+	setup
+
 	parse_opts "$@"
 
 	# preprocessing: rewrap to 80 columns for better readability
